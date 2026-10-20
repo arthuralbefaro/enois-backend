@@ -1,7 +1,9 @@
 package com.socialcoisa.rede.preferences.adapters.in.web;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.nullValue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -15,6 +17,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
 import tools.jackson.databind.ObjectMapper;
@@ -110,6 +113,39 @@ class ThemeControllerTests {
 		mockMvc.perform(withSession(get("/me/theme"), session))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.theme").value(nullValue()));
+	}
+
+	/**
+	 * Tema da galeria da comunidade como preferencia da conta.
+	 *
+	 * O id e "theme_" + UUID sem tracos, mais do que a coluna de 32 comportava: a validacao
+	 * passava e o INSERT morria. Por isso o teste confere a volta pelo GET, nao so o 204.
+	 */
+	@Test
+	void galleryThemeSurvivesTheAccountPreference() throws Exception {
+		var author = auth.authenticate("user_theme_gallery");
+
+		MvcResult created = mockMvc.perform(post("/temas/galeria")
+				.header("X-Session-Token", author.token())
+				.header("Idempotency-Key", "theme-pref-gallery")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(Map.of("name", "Tema da Comunidade", "modeDefault", "light",
+					"packageJson", "{\"palette\":{\"background\":\"#f5e6c8\",\"surface\":\"#f0e2c4\","
+						+ "\"muted\":\"#e8d9b8\",\"border\":\"#d8c9a8\",\"primary\":\"#7c3aed\","
+						+ "\"onPrimary\":\"#ffffff\",\"text\":{\"strong\":\"#3a2a10\","
+						+ "\"subtle\":\"#5a4a30\",\"date\":\"#777777\"}}}"))))
+			.andExpect(status().isOk())
+			.andReturn();
+		String themeId = objectMapper.readTree(created.getResponse().getContentAsString()).get("id").asText();
+		assertThat(themeId.length()).isGreaterThan(32);
+
+		mockMvc.perform(withSession(put("/me/theme"), author).contentType(MediaType.APPLICATION_JSON)
+			.content("{\"theme\":\"" + themeId + "\"}"))
+			.andExpect(status().isNoContent());
+
+		mockMvc.perform(withSession(get("/me/theme"), author))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.theme").value(themeId));
 	}
 
 	@Test

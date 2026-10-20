@@ -61,6 +61,19 @@ public class ThemePackage {
 			ThemeGalleryStatus.HIDDEN, reported, createdAt);
 	}
 
+	/**
+	 * Troca o conteudo conservando a identidade: id, autor, installs, denuncias e a data de
+	 * publicacao ficam onde estao — ajustar uma cor nao deve zerar a metrica do tema nem
+	 * cria-lo do zero na galeria. Aqui null significa "nao mexer" (semantica de PATCH); limpar a
+	 * descricao se faz com string vazia, que vira null.
+	 */
+	public ThemePackage edit(String name, String description, String packageJson, String modeDefault) {
+		String nextDescription = description == null ? this.description : (description.isBlank() ? null : description);
+		return new ThemePackage(id, authorId, name != null ? name : this.name, nextDescription,
+			packageJson != null ? packageJson : this.packageJson,
+			modeDefault != null ? modeDefault : this.modeDefault, installs, status, reported, createdAt);
+	}
+
 	public boolean isOwnedBy(String userId) {
 		return authorId.equals(userId);
 	}

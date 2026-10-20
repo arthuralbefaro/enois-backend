@@ -17,7 +17,7 @@ class UserPreferenceJpaEntity {
 	@Column(name = "user_id", nullable = false)
 	private String userId;
 
-	@Column(name = "theme_id", nullable = false, length = 32)
+	@Column(name = "theme_id", nullable = false, length = 64)
 	private String themeId;
 
 	@Column(name = "updated_at", nullable = false)

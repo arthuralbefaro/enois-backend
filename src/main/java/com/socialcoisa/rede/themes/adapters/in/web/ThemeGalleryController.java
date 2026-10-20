@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -34,11 +35,10 @@ class ThemeGalleryController {
 	}
 
 	@GetMapping("/temas/galeria/{themeId}")
-	Map<String, Object> get(@PathVariable String themeId) {
-		ThemePackage theme = gallery.get(themeId);
-		return Map.of("id", theme.id(), "name", theme.name(), "description", theme.description() == null ? "" : theme.description(),
-			"package", theme.packageJson(), "modeDefault", theme.modeDefault(), "installs", theme.installs(),
-			"createdAt", theme.createdAt().toString());
+	ThemeGalleryView get(@PathVariable String themeId) {
+		// A mesma forma da listagem: o pacote sai como `packageJson`, a chave que o front e a
+		// documentacao publica ja usam.
+		return ThemeGalleryView.from(gallery.get(themeId));
 	}
 
 	@PostMapping("/temas/galeria")
@@ -49,6 +49,15 @@ class ThemeGalleryController {
 		ThemePackage created = gallery.publish(user.id().value(), request.name(), request.description(),
 			request.packageJson(), request.modeDefault());
 		return Map.of("id", created.id(), "status", created.status().name());
+	}
+
+	@PatchMapping("/temas/galeria/{themeId}")
+	ThemeGalleryView update(@RequestHeader(value = "X-User-Id", required = false) String userId,
+			@RequestHeader(value = "X-Session-Token", required = false) String sessionToken,
+			@PathVariable String themeId, @RequestBody UpdateThemeRequest request) {
+		CurrentUser user = currentUserResolver.resolve(userId, sessionToken);
+		return ThemeGalleryView.from(gallery.update(themeId, user.id().value(), request.name(), request.description(),
+			request.packageJson(), request.modeDefault()));
 	}
 
 	@GetMapping("/temas/galeria/mine")
@@ -80,6 +89,10 @@ class ThemeGalleryController {
 	}
 
 	record PublishThemeRequest(String name, String description, String packageJson, String modeDefault) {
+	}
+
+	/** PATCH: o que ficar de fora do corpo permanece como esta. */
+	record UpdateThemeRequest(String name, String description, String packageJson, String modeDefault) {
 	}
 
 	record ThemeGalleryView(String id, String name, String description, String packageJson, String modeDefault,

@@ -143,6 +143,6 @@ class MarketplaceFlowTests {
 		return "{\"palette\":{\"background\":\"" + bg + "\",\"surface\":\"" + bg
 			+ "\",\"muted\":\"" + bg + "\",\"border\":\"" + bg
 			+ "\",\"primary\":\"#7c3aed\",\"onPrimary\":\"#ffffff\",\"soft\":\"#ede8f5\",\"text\":{\"strong\":\""
-			+ strong + "\",\"subtle\":\"#555555\",\"date\":\"#777777\"}},\"radius\":\"8px\"}";
+			+ strong + "\",\"subtle\":\"#555555\",\"date\":\"#777777\"},\"radius\":\"8px\"}}";
 	}
 }
